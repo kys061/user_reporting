@@ -5,12 +5,19 @@ from datetime import timedelta
 from datetime import datetime, date
 import time
 import re
+import requests
 #
 # local auxiliary modules
 #
 from parse_args import parse_args
 from saisei_api import query, query_get_all, query_hpm
 
+try:
+    from tqdm import tqdm
+except:
+    print("tqdm package is not installed. \
+          Install with command: \"pip install tqdm\"")
+    exit()
 try:
     import xlsxwriter
 except:
@@ -67,15 +74,39 @@ yesterday = today + timedelta(days=-1)
 day_before_yesterday = today + timedelta(days=-2)
 
 if args.start:
-    args_start = datetime.strptime(args.start, "%Y%m%d")
-    args_before_start = args_start + timedelta(days=-1)
-    FROM = args_before_start.strftime('%Y%m%d')
+    if len(args.start) == 8:
+        try:
+            args_start = datetime.strptime(args.start, "%Y%m%d")
+        except ValueError:
+            print(r'Wrong data Format, Pleas check date format : (YYYYMMDD)')
+            exit(1)
+        else:
+            args_before_start = args_start + timedelta(days=-1)
+            FROM = args_before_start.strftime('%Y%m%d')
+    else:
+        print(r'Wrong data Format, Pleas check date format : (YYYYMMDD)')
+        exit(1)
 #    FROM = args.start
 else:
     FROM = day_before_yesterday.strftime('%Y%m%d')
 #    FROM = yesterday.strftime('%Y%m%d')
 if args.end:
-    UNTIL = args.end
+    if len(args.end) == 8:
+        try:
+            args_end = datetime.strptime(args.end, "%Y%m%d")
+            delta = args_end - args_start
+            if delta.days < 0:
+                print(r'end_date can be after start_date!!')
+                exit(1)
+
+        except ValueError:
+            print(r'Wrong data Format, Pleas check date format : (YYYYMMDD)')
+            exit(1)
+        else:
+            UNTIL = args.end
+    else:
+        print(r'Wrong data Format, Pleas check date format : (YYYYMMDD)')
+        exit(1)
 else:
     UNTIL = yesterday.strftime('%Y%m%d')
 
@@ -339,7 +370,7 @@ def get_url(_select_att, _user, _from, _until,
                 r'&order=%3C' + _select_att + r'&limit=5&total=post&with=' +\
                 _select_att + r'%3E%3D0.01&from=' + FROM_TIME + r'_' + _from +\
                 r'&until=' + UNTIL_TIME + r'_' + _until
-            print(rest_url)
+#            print(rest_url)
             return rest_url
         if (_path_type is 'download' and _chart_type == 'line'):
             if (_plural is True):
@@ -349,7 +380,7 @@ def get_url(_select_att, _user, _from, _until,
                     _until + r'&operation=raw&history_points=true' +\
                     r'&token=' + REST_BASIC_PATH + r'users%2F&with=' +\
                     _select_att + r'%3E%3D0.01&limit=5&order=%3C' + _select_att
-                print(rest_url)
+#                print(rest_url)
                 return rest_url
             else:
                 rest_url = REST_PROTO + '://' + REST_SERVER + ':' + REST_PORT +\
@@ -363,7 +394,7 @@ def get_url(_select_att, _user, _from, _until,
                     _select_att + r'&from=' + FROM_TIME + r'_' + _from +\
                     r'&until=' + UNTIL_TIME + r'_' + _until +\
                     r'&operation=positive_derivative' + r'&history_points=true'
-                print(rest_url)
+#                print(rest_url)
                 return rest_url
 
         if (_path_type is 'upload' and _chart_type is 'pie'):
@@ -372,7 +403,7 @@ def get_url(_select_att, _user, _from, _until,
                 r'&order=%3C' + _select_att + r'&limit=5&total=post&with=' +\
                 _select_att + r'%3E%3D0.01&from=' + FROM_TIME + r'_' + _from +\
                 r'&until=' + UNTIL_TIME + r'_' + _until
-            print(rest_url)
+#            print(rest_url)
             return rest_url
         if (_path_type is 'upload' and _chart_type == 'line'):
             if (_plural is True):
@@ -382,7 +413,7 @@ def get_url(_select_att, _user, _from, _until,
                     r'_' + _until + r'&operation=raw&history_points=true' +\
                     r'&token=' + REST_BASIC_PATH + r'users%2F&with=' +\
                     _select_att + r'%3E%3D0.01&limit=5&order=%3C' + _select_att
-                print(rest_url)
+#                print(rest_url)
                 return rest_url
             else:
                 rest_url = REST_PROTO + '://' + REST_SERVER + ':' + REST_PORT +\
@@ -394,7 +425,7 @@ def get_url(_select_att, _user, _from, _until,
                     r'users/' + _user
 
 #       User-203.247.208.52?select=dest_byte_count&from=15%3A00%3A00_20170423&operation=positive_derivative&history_points=true&token=%2Frest%2Fstm%2Fconfigurations%2Frunning%2Fusers%2FUser-203.247.208.52&until=14%3A59%3A00_20170424
-                print(rest_url)
+#                print(rest_url)
                 return rest_url
 
 
@@ -404,7 +435,7 @@ def get_url_by_user(user, _select_att, _from, _until):
         _select_att + r'&order=%3C' + _select_att +\
         r'&limit=3&total=post&with=' + _select_att + r'%3E%3D0.01&from=' +\
         FROM_TIME + r'_' + _from + '&until=' + UNTIL_TIME + r'_' + _until
-    print(url)
+#    print(url)
     return url
 
 
@@ -427,6 +458,9 @@ def get_username(_start=0):
     else:
         return
 
+def get_total_user_size(_start=0):
+    users = query_get_all(get_users_name_url(str(_start), '10'), USER, PASS)
+    return users['size']
 
 def get_host_policy_url(_host):
     return REST_PROTO + '://' + REST_SERVER + ':' + REST_PORT +\
@@ -469,16 +503,29 @@ def make_xl_title(workbook, writer, sheetname=None, sheettitle=None,
 
 
 def check_http_status(returned):
-    if returned['status'] == 400 or 404:
-        print('http status {} Error : {}'.format(
-            returned['status'], returned['message']))
-        exit(1)
-    elif returned['status'] == 200:
-        return True
-    else:
-        print('http status {} Error : {}'.format(
-            returned['status'], returned['message']))
-        exit(1)
+    if isinstance(returned, requests.models.Response):
+        if returned['status'] == 400 or returned['status'] == 404:
+            print('http status {} Error : {}'.format(
+                returned['status'], returned['message']))
+            exit(1)
+        elif returned['status'] == 200:
+            return True
+        else:
+            print('http status {} Error : '.format(
+                returned['status'], returned['message']))
+            exit(1)
+    if isinstance(returned, list):
+        if returned[0]['status'] == 400 or returned[0]['status'] == 404:
+            print('http status {} Error : {}'.format(
+                returned[0]['status']))
+            exit(1)
+        elif returned[0]['status'] == 200:
+            return True
+        else:
+            print('http status {} Error : '.format(
+                returned[0]['status']))
+            exit(1)
+
 
 
 '''
@@ -569,13 +616,12 @@ def make_his_df_for_user(_user):
                 '_history_dest_smoothed_rate'].max()) + ' bit/sec')
 
     # top_app_by_rate
-    top_app_for_user_by_download_rate_history = query(
-        get_url_by_user(users_download_line_vol_history[0]['name'],
-                        'dest_smoothed_rate',
-                        FROM,
-                        UNTIL),
-        USER,
-        PASS)
+    top_app_for_user_by_download_rate_history = query(get_url_by_user(users_download_line_vol_history[0]['name'],
+                                                                      'dest_smoothed_rate',
+                                                                      FROM,
+                                                                      UNTIL),
+                                                      USER,
+                                                      PASS)
 
     if top_app_for_user_by_download_rate_history == []:
         _dn_top1_app.append(r'None')
@@ -821,48 +867,66 @@ def main():
     chk_usernames = get_username(_start=0)
 #    make_his_df_for_user('User-203.250.130.6')
     if check_gen(chk_usernames):
-        for i, username in enumerate(usernames):
-            start_for_time = time.time()
-            if i < 500:
+        try:
+            for i, username in tqdm(enumerate(usernames), ascii=True, ncols=80, total=int(get_total_user_size(_start=0)), desc='user_reporting'):
+#                if i < 500:
                 try:
                     df_user_data = make_his_df_for_user(username)
                 except Exception as e:
                     print('make_his_df_for_user : {}, {}'.format(username, e))
-                else:
-                    print("{0} Making {1}'s DF Traffic Data - elapsed time:{2:.3f} #################################".format(str(i+1), username, time.time() - start_for_time))
+#                else:
+#                    print("{0} Making {1}'s DF Traffic Data - elapsed time:{2:.3f} #################################".format(str(i+1), username, time.time() - start_for_time))
 
                 try:
                     if i == 0:
                         df_user_data.to_excel(writer,
-                                              sheet_name='User Traffic Data',
-                                              startrow=us_start_row,
-                                              startcol=us_start_col,
-                                              index=False,
-                                              header=True)
+                                                sheet_name='User Traffic Data',
+                                                startrow=us_start_row,
+                                                startcol=us_start_col,
+                                                index=False,
+                                                header=True)
                         us_start_row += 2
                     else:
                         df_user_data.to_excel(writer,
-                                              sheet_name='User Traffic Data',
-                                              startrow=us_start_row,
-                                              startcol=us_start_col,
-                                              index=False,
-                                              header=False)
+                                                sheet_name='User Traffic Data',
+                                                startrow=us_start_row,
+                                                startcol=us_start_col,
+                                                index=False,
+                                                header=False)
                         us_start_row += 1
                 except Exception as e:
                     print('error making excel files : {}, {}'.format(
                         username, e))
-            else:
-                print('Report is created successfully! - Total Elapsed Time:{0:.3f}'.format(time.time() - start_time))
-                return
-        time.sleep(0.3)
+#                else:
+        except KeyboardInterrupt:
+            print ("\r\nThe script is terminated by user interrupt!")
+            print ("Bye!!")
+            exit(1)
+        except Exception as e:
+            print('error for loop : {}'.format(e))
+            exit(1)
+        else:
+            make_xl_title(workbook,
+                        writer,
+                        sheetname='User Traffic Data',
+                        sheettitle='REPORT - USER TRAFFIC ANALYZE',
+                        merge_col=r'F:N',
+                        merge_range=r'F1:N2',
+                        img_range=r'C1:D2')
+            writer.save()
+            print('Report is created successfully! - Total Elapsed Time:{0:.3f}'.format(time.time() - start_time))
+#                    return
+            time.sleep(0.3)
+    else:
+        make_xl_title(workbook,
+                    writer,
+                    sheetname='User Traffic Data',
+                    sheettitle='REPORT - USER TRAFFIC ANALYZE',
+                    merge_col=r'F:N',
+                    merge_range=r'F1:N2',
+                    img_range=r'C1:D2')
+        writer.save()
+        print('there is no users! - Total Elapsed Time:{0:.3f}'.format(time.time() - start_time))
 
-    make_xl_title(workbook,
-                  writer,
-                  sheetname='User Traffic Data',
-                  sheettitle='REPORT - USER TRAFFIC ANALYZE',
-                  merge_col=r'F:N',
-                  merge_range=r'F1:N2',
-                  img_range=r'C1:D2')
-    writer.save()
 if __name__ == '__main__':
     main()
