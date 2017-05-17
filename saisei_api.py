@@ -72,7 +72,11 @@ def query(url, user, password):
 
     if resp:
         data = resp.json()
-        return data['collection']
+        if data['collection'] == []:
+            return data['collection']
+        else:
+            data['collection'][0]['status'] = 200
+            return data['collection']
     else:
         if resp.status_code == 404 or resp.status_code == 400:
             logger.error("### requests.get returned {} status code ###".format(
@@ -87,7 +91,11 @@ def query(url, user, password):
 
         if resp:
             data = resp.json()
-            return data['collection']
+            if data['collection'] == []:
+                return data['collection']
+            else:
+                data['collection'][0]['status'] = 200
+                return data['collection']
         else:
             if resp.status_code == 404 or resp.status_code == 400:
                 logger.error("### requests.get returned {} status code ###".format(
@@ -102,7 +110,11 @@ def query(url, user, password):
 
             if resp:
                 data = resp.json()
-                return data['collection']
+                if data['collection'] == []:
+                    return data['collection']
+                else:
+                    data['collection'][0]['status'] = 200
+                    return data['collection']
             else:
                 if resp.status_code == 404 or resp.status_code == 400:
                     logger.error("### requests.get returned {} status code ###".format(
@@ -158,7 +170,11 @@ def query_hpm(url, user, password):
 
     if resp:
         data = resp.json()
-        return data['collection']
+        if data['collection'] == []:
+            return data['collection']
+        else:
+            data['collection'][0]['status'] = 200
+            return data['collection']
     else:
         if resp.status_code == 404:
             return resp.status_code
@@ -170,7 +186,11 @@ def query_hpm(url, user, password):
 
         if resp:
             data = resp.json()
-            return data['collection']
+            if data['collection'] == []:
+                return data['collection']
+            else:
+                data['collection'][0]['status'] = 200
+                return data['collection']
         else:
             if resp.status_code == 404:
                 return resp.status_code
@@ -182,7 +202,11 @@ def query_hpm(url, user, password):
 
             if resp:
                 data = resp.json()
-                return data['collection']
+                if data['collection'] == []:
+                    return data['collection']
+                else:
+                    data['collection'][0]['status'] = 200
+                    return data['collection']
             else:
                 if resp.status_code == 404:
                     return resp.status_code
