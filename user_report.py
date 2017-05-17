@@ -9,8 +9,9 @@ import requests
 #
 # local auxiliary modules
 #
-from parse_args import parse_args
-from saisei_api import query, query_get_all, query_hpm
+from user_report_api import parse_args, query, query_get_all, query_hpm
+#from parse_args import parse_args
+#from saisei_api import query, query_get_all, query_hpm
 
 try:
     from tqdm import tqdm
