@@ -7,6 +7,27 @@ import time
 from datetime import timedelta
 from argparse import ArgumentParser
 
+################################################################################
+REST_PROTO = 'http'
+REST_SERVER = 'localhost'
+REST_PORT = '5000'
+REST_SYS_NAME = 'stm'  # change you hostname
+REST_BASIC_PATH = r'/rest/' + REST_SYS_NAME + '/configurations/running/'
+REST_USER_PATH = r''
+USER = 'admin'
+PASS = 'admin'
+FILE_PATH = r'/var/log/user_report/'
+#FROM_TIME = r'00:00:00'
+#UNTIL_TIME = r'23:59:59'
+
+FROM_TIME = r'15:00:00'
+UNTIL_TIME = r'14:59:59'
+################################################################################
+# 0-1000  -> 0-999
+# 1000-2000 -> 1000-1999
+# 2000-3000 -> 2000-2999
+################################################################################
+
 # recorder logger setting
 SCRIPT_MON_LOG_FILE = r'/var/log/user_report.log'
 
