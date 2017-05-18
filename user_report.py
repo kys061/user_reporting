@@ -1,5 +1,6 @@
 #!/usr/bin/python2.7
 # Copyright (C) 2016 Saisei Networks Inc. All rights reserved.
+import os
 import sys
 from datetime import timedelta
 from datetime import datetime, date
@@ -10,6 +11,10 @@ import requests
 # local auxiliary modules
 #
 from user_report_api import parse_args, query, query_get_all, query_hpm
+from user_report_api import REST_PROTO, REST_SERVER, REST_PORT
+from user_report_api import REST_BASIC_PATH, FILE_PATH
+from user_report_api import USER, PASS, FROM_TIME, UNTIL_TIME
+
 #from parse_args import parse_args
 #from saisei_api import query, query_get_all, query_hpm
 
@@ -37,27 +42,6 @@ except:
     print("pandas package is not installed. \
           Install with command: \"pip install pandas\"")
     exit()
-
-################################################################################
-REST_PROTO = 'http'
-REST_SERVER = 'localhost'
-REST_PORT = '5000'
-REST_SYS_NAME = 'stm'  # change you hostname
-REST_BASIC_PATH = r'/rest/' + REST_SYS_NAME + '/configurations/running/'
-REST_USER_PATH = r''
-USER = 'admin'
-PASS = 'admin'
-
-#FROM_TIME = r'00:00:00'
-#UNTIL_TIME = r'23:59:59'
-
-FROM_TIME = r'15:00:00'
-UNTIL_TIME = r'14:59:59'
-################################################################################
-# 0-1000  -> 0-999
-# 1000-2000 -> 1000-1999
-# 2000-3000 -> 2000-2999
-################################################################################
 
 # pandas v0.14.1
 pd.core.format.header_style = None
@@ -845,10 +829,18 @@ def check_gen(_usernames):
 
 def main():
     start_time = time.time()
-    if args.start or args.end:
-        xl_file_name = 'User_report_' + args.start + '_' + args.end + '.xlsx'
+
+    if os.path.isdir(FILE_PATH):
+        if args.start or args.end:
+            xl_file_name = FILE_PATH + 'User_report_' + args.start + '_' + args.end + '.xlsx'
+        else:
+            xl_file_name = FILE_PATH + 'User_report_' + UNTIL + '_' + UNTIL + '.xlsx'
     else:
-        xl_file_name = 'User_report_' + UNTIL + '_' + UNTIL + '.xlsx'
+        os.makedirs(FILE_PATH)
+        if args.start or args.end:
+            xl_file_name = FILE_PATH + 'User_report_' + args.start + '_' + args.end + '.xlsx'
+        else:
+            xl_file_name = FILE_PATH + 'User_report_' + UNTIL + '_' + UNTIL + '.xlsx'
 
     writer = pd.ExcelWriter(xl_file_name, engine='xlsxwriter')
     #writer = pd.ExcelWriter('Day_Summary.xlsx', engine='xlsxwriter')
@@ -875,8 +867,6 @@ def main():
                     df_user_data = make_his_df_for_user(username)
                 except Exception as e:
                     print('make_his_df_for_user : {}, {}'.format(username, e))
-#                else:
-#                    print("{0} Making {1}'s DF Traffic Data - elapsed time:{2:.3f} #################################".format(str(i+1), username, time.time() - start_for_time))
 
                 try:
                     if i == 0:
@@ -908,26 +898,26 @@ def main():
             exit(1)
         else:
             make_xl_title(workbook,
-                        writer,
-                        sheetname='User Traffic Data',
-                        sheettitle='REPORT - USER TRAFFIC ANALYZE',
-                        merge_col=r'F:N',
-                        merge_range=r'F1:N2',
-                        img_range=r'C1:D2')
+                          writer,
+                          sheetname='User Traffic Data',
+                          sheettitle='REPORT - USER TRAFFIC ANALYZE',
+                          merge_col=r'F:N',
+                          merge_range=r'F1:N2',
+                          img_range=r'C1:D2')
             writer.save()
             print('Report is created successfully! - Total Elapsed Time:{0:.3f}'.format(time.time() - start_time))
 #                    return
             time.sleep(0.3)
     else:
         make_xl_title(workbook,
-                    writer,
-                    sheetname='User Traffic Data',
-                    sheettitle='REPORT - USER TRAFFIC ANALYZE',
-                    merge_col=r'F:N',
-                    merge_range=r'F1:N2',
-                    img_range=r'C1:D2')
+                      writer,
+                      sheetname='User Traffic Data',
+                      sheettitle='REPORT - USER TRAFFIC ANALYZE',
+                      merge_col=r'F:N',
+                      merge_range=r'F1:N2',
+                      img_range=r'C1:D2')
         writer.save()
-        print('there is no users! - Total Elapsed Time:{0:.3f}'.format(time.time() - start_time))
+        print('There is no users! - Total Elapsed Time:{0:.3f}'.format(time.time() - start_time))
 
 if __name__ == '__main__':
     main()
