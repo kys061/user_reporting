@@ -782,17 +782,20 @@ def make_his_df_for_user(_user):
         users_download_line_vol_history[0]['until'],
         "%Y-%m-%dT%H:%M:%S"))))
 
-    m = re.search(r'[0-9]+.[0-9]+.[0-9]+.[0-9]+', _user)
-    _host = _user[m.start():m.end()]
-    _host_policy = query_hpm(get_host_policy_url(_host), USER, PASS)
-    if _host_policy == 404 or _host_policy == 400:
-        _hpm.append(r'<none>')
+    if re.search(r'[0-9]+.[0-9]+.[0-9]+.[0-9]+', _user):
+        m = re.search(r'[0-9]+.[0-9]+.[0-9]+.[0-9]+', _user)
+        _host = _user[m.start():m.end()]
+        _host_policy = query_hpm(get_host_policy_url(_host), USER, PASS)
+        if _host_policy == 404 or _host_policy == 400:
+            _hpm.append(r'<none>')
+        else:
+            if _host_policy[0]['policy']:
+                if isinstance(_host_policy[0]['policy'], dict):
+                    _hpm.append(_host_policy[0]['policy']['link']['name'])
+                else:
+                    _hpm.append(_host_policy[0]['policy'])
     else:
-        if _host_policy[0]['policy']:
-            if isinstance(_host_policy[0]['policy'], dict):
-                _hpm.append(_host_policy[0]['policy']['link']['name'])
-            else:
-                _hpm.append(_host_policy[0]['policy'])
+        _hpm.append(r'<none>')
 
     l_new_history = list(zip(_username,
                              _from, _until,
@@ -858,7 +861,7 @@ def main():
 
     usernames = get_username(_start=0)
     chk_usernames = get_username(_start=0)
-#    make_his_df_for_user('User-203.250.130.6')
+#    make_his_df_for_user('wmk901.hangame.com')
     if check_gen(chk_usernames):
         try:
             for i, username in tqdm(enumerate(usernames), ascii=True, ncols=80, total=int(get_total_user_size(_start=0)), desc='user_reporting'):
