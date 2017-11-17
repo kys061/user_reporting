@@ -4,6 +4,7 @@
 import logging
 import requests
 import time
+import os
 from datetime import timedelta
 from argparse import ArgumentParser
 
@@ -11,7 +12,7 @@ from argparse import ArgumentParser
 REST_PROTO = 'http'
 REST_SERVER = 'localhost'
 REST_PORT = '5000'
-REST_SYS_NAME = 'stm'  # change you hostname
+REST_SYS_NAME = os.uname()[1]  # change you hostname
 REST_BASIC_PATH = r'/rest/' + REST_SYS_NAME + '/configurations/running/'
 REST_USER_PATH = r''
 USER = 'admin'
